@@ -4,19 +4,25 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Trash2, Pencil, Check, X } from "lucide-react";
 import StarField from "@/components/StarField";
 import { TOPICS } from "@/lib/questions";
-import { apiGetAllQuestions, apiDeleteQuestion, apiUpdateQuestion, Question } from "@/lib/api";
+import {
+  apiGetAllQuestions,
+  apiDeleteQuestion,
+  apiUpdateQuestion,
+  apiVerifyAdmin,
+  Question,
+} from "@/lib/api";
 import { useLang, getTopicLabelI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-
-// 관리자 비밀번호는 .env 의 VITE_ADMIN_PASSWORD 로 설정합니다.
-// 소스 코드에 비밀번호를 직접 적지 않아 깃 저장소에 노출되지 않습니다.
-const ADMIN_PASSWORD = (import.meta.env.VITE_ADMIN_PASSWORD as string | undefined) ?? "";
 
 export default function Admin() {
   const navigate = useNavigate();
   const { t, lang } = useLang();
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
+  // 인증에 사용한 비밀번호를 메모리에 보관해 관리자 요청에 함께 전송합니다.
+  // (비밀번호는 빌드 번들이 아니라 사용자가 직접 입력하고, 검증은 서버가 합니다.)
+  const [adminPassword, setAdminPassword] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [editTopics, setEditTopics] = useState<string[]>([]);
@@ -35,19 +41,31 @@ export default function Admin() {
     if (authenticated) loadQuestions();
   }, [authenticated]);
 
-  const handleLogin = () => {
-    if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      toast.success(t("adminLoginSuccess"));
-    } else {
-      toast.error(t("adminLoginFail"));
+  const handleLogin = async () => {
+    if (loggingIn) return;
+    setLoggingIn(true);
+    try {
+      const ok = await apiVerifyAdmin(password);
+      if (ok) {
+        setAdminPassword(password);
+        setAuthenticated(true);
+        toast.success(t("adminLoginSuccess"));
+      } else {
+        toast.error(t("adminLoginFail"));
+      }
+    } finally {
+      setLoggingIn(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    await apiDeleteQuestion(id);
-    setQuestions(prev => prev.filter(q => q.id !== id));
-    toast.success(t("adminDeleted"));
+    try {
+      await apiDeleteQuestion(id, { adminPassword });
+      setQuestions(prev => prev.filter(q => q.id !== id));
+      toast.success(t("adminDeleted"));
+    } catch {
+      toast.error(t("adminLoginFail"));
+    }
   };
 
   const handleEdit = (id: string, text: string, topics: string[]) => {
@@ -64,10 +82,14 @@ export default function Admin() {
 
   const handleSave = async () => {
     if (editingId && editText.trim() && editTopics.length > 0) {
-      await apiUpdateQuestion(editingId, editText.trim(), editTopics);
-      setEditingId(null);
-      loadQuestions();
-      toast.success(t("adminSaved"));
+      try {
+        await apiUpdateQuestion(editingId, editText.trim(), editTopics, { adminPassword });
+        setEditingId(null);
+        loadQuestions();
+        toast.success(t("adminSaved"));
+      } catch {
+        toast.error(t("adminLoginFail"));
+      }
     }
   };
 
@@ -93,7 +115,8 @@ export default function Admin() {
             />
             <button
               onClick={handleLogin}
-              className="w-full py-3 rounded-xl bg-secondary text-secondary-foreground text-lg hover:brightness-110 transition-all"
+              disabled={loggingIn}
+              className="w-full py-3 rounded-xl bg-secondary text-secondary-foreground text-lg hover:brightness-110 transition-all disabled:opacity-60"
             >
               {t("adminEnter")}
             </button>

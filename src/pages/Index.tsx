@@ -58,7 +58,7 @@ export default function Index() {
     setLaunching(true);
     try {
       const newQ = await apiAddQuestion(author.trim(), text.trim(), finalTopics);
-      addMyQuestion(newQ.id);
+      addMyQuestion(newQ.id, newQ.ownerToken);
       setQuestions(prev => [newQ, ...prev]);
       setText("");
       setSelectedTopics([]);

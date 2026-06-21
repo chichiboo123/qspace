@@ -11,6 +11,7 @@ export interface Comment {
   author: string;
   text: string;
   createdAt: string;
+  ownerToken?: string;
   text_ko?: string;
   text_en?: string;
   text_ja?: string;
@@ -24,10 +25,17 @@ export interface Question {
   topics: string[];
   createdAt: string;
   comments: Comment[];
+  ownerToken?: string;
   text_ko?: string;
   text_en?: string;
   text_ja?: string;
   text_id?: string;
+}
+
+// 수정/삭제 권한 증명: 본인 토큰 또는 관리자 비밀번호
+export interface AuthArg {
+  token?: string;
+  adminPassword?: string;
 }
 
 function safeString(value: unknown): string {
@@ -54,6 +62,7 @@ function sanitizeComment(raw: any): Comment | null {
     author: safeString(raw?.author),
     text: safeString(raw?.text),
     createdAt: safeString(raw?.createdAt),
+    ownerToken: safeString(raw?.ownerToken),
     text_ko: safeString(raw?.text_ko),
     text_en: safeString(raw?.text_en),
     text_ja: safeString(raw?.text_ja),
@@ -75,6 +84,7 @@ function sanitizeQuestion(raw: any): Question | null {
     topics: normalizeTopics(raw?.topics),
     createdAt: safeString(raw?.createdAt),
     comments: rawComments.map(sanitizeComment).filter(Boolean) as Comment[],
+    ownerToken: safeString(raw?.ownerToken),
     text_ko: safeString(raw?.text_ko),
     text_en: safeString(raw?.text_en),
     text_ja: safeString(raw?.text_ja),
@@ -155,18 +165,41 @@ export async function apiAddComment(questionId: string, author: string, text: st
   return sanitized;
 }
 
-export async function apiDeleteQuestion(id: string): Promise<any> {
-  return fetchPost({ action: "deletequestion", id });
+function withAuth(body: Record<string, any>, auth?: AuthArg): Record<string, any> {
+  if (auth?.token) body.token = auth.token;
+  if (auth?.adminPassword) body.adminPassword = auth.adminPassword;
+  return body;
 }
 
-export async function apiUpdateQuestion(id: string, text: string, topics: string[]): Promise<any> {
-  return fetchPost({ action: "updatequestion", id, text, topics });
+function assertAuthorized(data: any): any {
+  if (data?.error === "unauthorized") {
+    throw new Error("unauthorized");
+  }
+  return data;
 }
 
-export async function apiDeleteComment(questionId: string, id: string): Promise<any> {
-  return fetchPost({ action: "deletecomment", questionId, id });
+export async function apiDeleteQuestion(id: string, auth?: AuthArg): Promise<any> {
+  return assertAuthorized(await fetchPost(withAuth({ action: "deletequestion", id }, auth)));
 }
 
-export async function apiUpdateComment(questionId: string, id: string, text: string): Promise<any> {
-  return fetchPost({ action: "updatecomment", questionId, id, text });
+export async function apiUpdateQuestion(id: string, text: string, topics: string[], auth?: AuthArg): Promise<any> {
+  return assertAuthorized(await fetchPost(withAuth({ action: "updatequestion", id, text, topics }, auth)));
+}
+
+export async function apiDeleteComment(questionId: string, id: string, auth?: AuthArg): Promise<any> {
+  return assertAuthorized(await fetchPost(withAuth({ action: "deletecomment", questionId, id }, auth)));
+}
+
+export async function apiUpdateComment(questionId: string, id: string, text: string, auth?: AuthArg): Promise<any> {
+  return assertAuthorized(await fetchPost(withAuth({ action: "updatecomment", questionId, id, text }, auth)));
+}
+
+// 관리자 비밀번호를 서버에서 검증 (비밀번호는 번들에 저장하지 않음)
+export async function apiVerifyAdmin(password: string): Promise<boolean> {
+  try {
+    const data = await fetchPost({ action: "verifyadmin", password });
+    return data?.ok === true;
+  } catch {
+    return false;
+  }
 }

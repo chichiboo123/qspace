@@ -20,6 +20,8 @@ import {
   isMyQuestion,
   removeMyComment,
   removeMyQuestion,
+  getMyQuestionToken,
+  getMyCommentToken,
 } from "@/lib/ownership";
 import { useLang, getTopicLabelI18n, Lang } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -109,7 +111,7 @@ export default function QuestionDetail() {
     setSubmitting(true);
     try {
       const newComment = await apiAddComment(question.id, commentAuthor.trim(), trimmedText);
-      addMyComment(newComment.id);
+      addMyComment(newComment.id, newComment.ownerToken);
       setQuestion(prev => prev ? { ...prev, comments: [...prev.comments, newComment] } : prev);
       setCommentText("");
       setLastCommentTime(Date.now());
@@ -141,7 +143,9 @@ export default function QuestionDetail() {
 
     setSavingQuestion(true);
     try {
-      await apiUpdateQuestion(question.id, editQText.trim(), editQTopics);
+      await apiUpdateQuestion(question.id, editQText.trim(), editQTopics, {
+        token: getMyQuestionToken(question.id),
+      });
       const refreshed = await apiGetQuestionById(question.id);
       if (refreshed) setQuestion(refreshed);
       setEditingQuestion(false);
@@ -157,7 +161,7 @@ export default function QuestionDetail() {
   const handleDeleteQuestion = async () => {
     if (!window.confirm(t("confirmDeleteQuestion"))) return;
     try {
-      await apiDeleteQuestion(question.id);
+      await apiDeleteQuestion(question.id, { token: getMyQuestionToken(question.id) });
       removeMyQuestion(question.id);
       toast.success(t("toastQuestionDeleted"));
       navigate("/questions");
@@ -179,7 +183,9 @@ export default function QuestionDetail() {
 
     setSavingComment(true);
     try {
-      await apiUpdateComment(question.id, editingCommentId, trimmed);
+      await apiUpdateComment(question.id, editingCommentId, trimmed, {
+        token: getMyCommentToken(editingCommentId),
+      });
       const refreshed = await apiGetQuestionById(question.id);
       if (refreshed) setQuestion(refreshed);
       setEditingCommentId(null);
@@ -195,7 +201,7 @@ export default function QuestionDetail() {
   const handleDeleteComment = async (commentId: string) => {
     if (!window.confirm(t("confirmDeleteComment"))) return;
     try {
-      await apiDeleteComment(question.id, commentId);
+      await apiDeleteComment(question.id, commentId, { token: getMyCommentToken(commentId) });
       removeMyComment(commentId);
       setQuestion(prev =>
         prev ? { ...prev, comments: prev.comments.filter((c) => c.id !== commentId) } : prev
