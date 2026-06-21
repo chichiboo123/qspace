@@ -3,7 +3,7 @@
 // 자세한 설정 방법은 backend/README.md 를 참고하세요.
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
-  "REPLACE_WITH_YOUR_APPS_SCRIPT_URL";
+  "https://script.google.com/macros/s/AKfycbyDItY893fnmw4xNzaWwRzPDkYigUXk5m0GyU3yc7XpfffZ-_OLwdLiDdAqS8iLz90v/exec";
 
 export interface Comment {
   id: string;
