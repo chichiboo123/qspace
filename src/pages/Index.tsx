@@ -87,8 +87,7 @@ export default function Index() {
           className="text-center mb-6 mt-2"
         >
           <h1 className="text-3xl sm:text-4xl md:text-6xl tracking-wide mb-2">
-            <span className="text-primary">{t("title1")}</span>{" "}
-            <span className="text-accent">{t("title2")}</span>
+            <span className="text-primary">Q</span><span className="text-accent">-SPACE</span>
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg">{t("subtitle")}</p>
         </motion.div>
