@@ -30,10 +30,13 @@ jobs:
       - name: Build
         run: bun run build
         env:
-          # GitHub Pages 배포 시 내 백엔드로 연결하려면
-          # 저장소 Settings → Secrets and variables → Actions → Variables 에
-          # VITE_API_URL 변수를 추가하세요. (backend/README.md 참고)
+          # GitHub Pages 배포용 환경 변수.
+          # 저장소 Settings → Secrets and variables → Actions 에서 설정하세요.
+          #  - Variables 탭: VITE_API_URL  (백엔드 주소)
+          #  - Secrets 탭:   VITE_ADMIN_PASSWORD  (관리자 비밀번호)
+          # 자세한 내용은 backend/README.md 참고.
           VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

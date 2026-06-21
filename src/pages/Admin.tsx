@@ -8,7 +8,9 @@ import { apiGetAllQuestions, apiDeleteQuestion, apiUpdateQuestion, Question } fr
 import { useLang, getTopicLabelI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
-const ADMIN_PASSWORD = "nsn2865";
+// 관리자 비밀번호는 .env 의 VITE_ADMIN_PASSWORD 로 설정합니다.
+// 소스 코드에 비밀번호를 직접 적지 않아 깃 저장소에 노출되지 않습니다.
+const ADMIN_PASSWORD = (import.meta.env.VITE_ADMIN_PASSWORD as string | undefined) ?? "";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export default function Admin() {
   }, [authenticated]);
 
   const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
+    if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
       setAuthenticated(true);
       toast.success(t("adminLoginSuccess"));
     } else {

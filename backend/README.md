@@ -74,5 +74,18 @@ cp .env.example .env
 
 ## 관리자 비밀번호
 
-관리자 모드 비밀번호는 프론트엔드 `src/pages/Admin.tsx` 의
-`ADMIN_PASSWORD` 상수에서 변경할 수 있습니다.
+관리자 모드 비밀번호는 **소스 코드가 아니라 `.env` 환경 변수**에 저장합니다.
+
+```env
+VITE_ADMIN_PASSWORD=원하는_비밀번호
+```
+
+- 로컬 개발: 위 값을 `.env` 에 넣습니다. (`.env` 는 깃에 올라가지 않습니다)
+- GitHub Pages 배포: 저장소 **Settings → Secrets and variables → Actions → Secrets**
+  탭에서 `VITE_ADMIN_PASSWORD` 시크릿을 추가합니다.
+
+> ⚠️ 참고: 이 앱은 백엔드 없이 브라우저에서 동작하는 프론트엔드 앱이라,
+> 비밀번호는 빌드된 자바스크립트 안에 포함됩니다. 즉 **소스 저장소에는
+> 노출되지 않지만**, 마음먹고 분석하는 사람에게는 보일 수 있습니다.
+> 완전한 보안이 필요하면 삭제/수정 권한 검증을 Apps Script(서버) 쪽에서
+> 처리하도록 확장해야 합니다.
