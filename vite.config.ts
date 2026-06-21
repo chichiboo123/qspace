@@ -5,7 +5,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/qspace/",
+  // 개발 서버는 루트(/)에서, 프로덕션 빌드(GitHub Pages)는 /qspace/ 에서 동작합니다.
+  base: mode === "production" ? "/qspace/" : "/",
   server: {
     host: "::",
     port: 8080,
